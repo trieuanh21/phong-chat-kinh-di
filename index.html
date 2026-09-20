@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nexus Work — Internal Chat</title>
+<title>Máy Chủ Nội Bộ — Internal Chat</title>
 <style>
 :root{
   --bg:#0e1013; --panel:#14171c; --panel2:#181c22; --line:#22272f;
@@ -115,13 +115,10 @@ body.ghost #ghostdot{display:block}
 <body>
 <div id="app">
   <aside id="side">
-    <div class="brand"><div class="logo">N</div><div><b>Nexus Work</b><small>Kênh nội bộ • v4.2.1</small></div></div>
+    <div class="brand"><div class="logo">M</div><div><b>Máy Chủ Nội Bộ</b><small>Kênh nội bộ • v4.2.1</small></div></div>
     <div class="search">Tìm kiếm tin nhắn…</div>
     <div class="sect">Tin nhắn gần đây</div>
     <div class="contact active"><div class="av on" id="sav">?</div><div style="min-width:0"><div class="nm" id="sname">—</div><div class="pv" id="spv">—</div></div></div>
-    <div class="contact"><div class="av">TH</div><div style="min-width:0"><div class="nm">Trần Thu Hà</div><div class="pv">File báo cáo em gửi rồi nhé</div></div><span class="badge">2</span></div>
-    <div class="contact"><div class="av">BV</div><div style="min-width:0"><div class="nm">Bảo vệ toà nhà</div><div class="pv">Toà nhà đóng cửa lúc 19:00</div></div></div>
-    <div class="contact"><div class="av">IT</div><div style="min-width:0"><div class="nm">IT Support</div><div class="pv">Đã đóng ticket #4417</div></div></div>
     <div class="contact"><div class="av">#</div><div style="min-width:0"><div class="nm"># thong-bao-chung</div><div class="pv">Lịch trực đêm tháng này</div></div></div>
     <div class="me-bar"><div class="av on" id="meav">T</div><div><div id="mename">Tôi</div><div style="color:var(--muted);font-size:11px">Đang hoạt động</div></div></div>
   </aside>
@@ -149,11 +146,11 @@ body.ghost #ghostdot{display:block}
     <label>Kịch bản</label>
     <textarea id="script" spellcheck="false"></textarea>
     <div class="rowf">
-      <div><label>Tên tôi</label><input type="text" id="cfgMe" value="Tôi"></div>
+      <div><label>Tên tôi</label><input type="text" id="cfgMe" value="Thế Anh Đẹp Trai"></div>
       <div><label>Đồng hồ bắt đầu</label><input type="text" id="cfgClock" value="23:47"></div>
     </div>
     <label class="chk"><input type="checkbox" id="cfgGhost" checked> Gõ phím ma (gõ phím bất kỳ ra đúng chữ kịch bản)</label>
-    <label class="chk"><input type="checkbox" id="cfgSound"> Bật âm thanh nền rùng rợn</label>
+    <label class="chk"><input type="checkbox" id="cfgSound" checked> Bật âm thanh nền rùng rợn</label>
     <label class="chk"><input type="checkbox" id="cfgFilm"> Chế độ quay phim (ẩn nút cài đặt)</label>
     <div class="hint">CÚ PHÁP
 &gt; câu tôi gửi
@@ -188,7 +185,7 @@ const feed=$("#feed"),inp=$("#inp"),send=$("#send"),panel=$("#panel"),scriptBox=
 
 /* ---------- KỊCH BẢN MẪU ---------- */
 const DEMO=`# Kịch bản mẫu - hãy sửa lại theo phim của bạn
-!name Lê Minh - Phòng Nhân sự
+!name Đồng Nghiệp Khó Tính - Phòng Nhân Sự
 !status Đang hoạt động
 !clock 23:47
 
@@ -202,14 +199,14 @@ const DEMO=`# Kịch bản mẫu - hãy sửa lại theo phim của bạn
 !fx glitch
 > Anh đừng doạ em.
 !status đang nhập…
-< [4s] Tôi không phải Lê Minh.
+< [4s] Tôi không phải người em nghĩ đâu.
 !fx flicker
 !name ?????
 !sys Người dùng này đã đổi tên hiển thị
-< [2.5s] Minh nghỉ việc từ tháng trước. Em không nhớ sao?
+< [2.5s] Người này đã nghỉ việc từ tháng trước. Em không nhớ sao?
 > Vậy ai đang nhắn với em???
 !typing 7s
-!sys Lê Minh đã thu hồi một tin nhắn
+!sys Đồng Nghiệp Khó Tính - Phòng Nhân Sự đã thu hồi một tin nhắn
 !wait 1.5s
 < [0.6s] Đừng quay lại nhìn.
 !fx shake
@@ -390,7 +387,7 @@ function apply(){
   items=parse(scriptBox.value);ptr=0;clockMin=0;
   feed.innerHTML='<div class="daysep">Hôm nay</div>';
   document.body.classList.remove("blood");fx("reset");
-  $("#mename").textContent=$("#cfgMe").value||"Tôi";
+  $("#mename").textContent=$("#cfgMe").value||"Thế Anh Đẹp Trai";
   $("#meav").textContent=($("#cfgMe").value||"T").trim()[0].toUpperCase();
   const cm=($("#cfgClock").value||"23:47").match(/(\d{1,2})\s*:\s*(\d{2})/);
   clockBase=cm?[+cm[1],+cm[2]]:[23,47];tickClock();
@@ -413,8 +410,8 @@ function save(){try{localStorage.setItem("hchat",JSON.stringify({s:scriptBox.val
 function load(){
   let d=null;try{const r=localStorage.getItem("hchat");if(r)d=JSON.parse(r);}catch(e){}
   scriptBox.value=d&&d.s?d.s:DEMO;
-  if(d){$("#cfgMe").value=d.me||"Tôi";$("#cfgClock").value=d.c||"23:47";
-    $("#cfgGhost").checked=d.g!==false;$("#cfgSound").checked=!!d.so;$("#cfgFilm").checked=!!d.f;}
+  if(d){$("#cfgMe").value=d.me||"Thế Anh Đẹp Trai";$("#cfgClock").value=d.c||"23:47";
+    $("#cfgGhost").checked=d.g!==false;$("#cfgSound").checked=d.so!==false;$("#cfgFilm").checked=!!d.f;}
 }
 scriptBox.addEventListener("input",save);
 $("#cfgMe").addEventListener("input",save);$("#cfgClock").addEventListener("input",save);
