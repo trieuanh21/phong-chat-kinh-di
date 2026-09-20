@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nexus Work — Internal Chat</title>
+<style>
+:root{
+  --bg:#0e1013; --panel:#14171c; --panel2:#181c22; --line:#22272f;
+  --txt:#d7dce3; --muted:#7d8794; --me:#2d5f8a; --them:#1d222a;
+  --accent:#4a8fd6; --danger:#b23b3b;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  font-size:15px;overflow:hidden;
+}
+#app{display:flex;height:100%;position:relative}
+
+/* ---------- SIDEBAR ---------- */
+#side{width:260px;flex:0 0 260px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.brand{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.logo{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#3b6fa8,#24405e);display:grid;place-items:center;font-weight:700;font-size:13px;color:#dfe9f5}
+.brand b{font-size:14px;font-weight:600;letter-spacing:.2px}
+.brand small{display:block;color:var(--muted);font-size:11px;font-weight:400}
+.search{margin:10px;padding:7px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--muted);font-size:12.5px}
+.sect{padding:8px 16px 4px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px}
+.contact{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:default}
+.contact.active{background:#1e242c;border-left:3px solid var(--accent);padding-left:11px}
+.av{width:30px;height:30px;border-radius:50%;background:#2a313b;display:grid;place-items:center;font-size:12px;color:#c3ccd8;flex:0 0 30px;position:relative}
+.av.on::after{content:"";position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;background:#3f9e5a;border:2px solid var(--panel)}
+.contact .nm{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.contact .pv{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10.5px;border-radius:9px;padding:1px 6px}
+.me-bar{margin-top:auto;padding:10px 14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;font-size:12.5px}
+
+/* ---------- MAIN ---------- */
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#head{height:58px;flex:0 0 58px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;padding:0 18px;background:var(--panel2)}
+#hname{font-size:14.5px;font-weight:600}
+#hstat{font-size:11.5px;color:var(--muted)}
+#clock{margin-left:auto;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+#feed{flex:1;overflow-y:auto;padding:22px 26px;display:flex;flex-direction:column;gap:3px;scroll-behavior:smooth}
+.daysep{text-align:center;color:var(--muted);font-size:11px;margin:6px 0 14px;position:relative}
+.row{display:flex;margin-top:9px;animation:pop .18s ease-out}
+.row.mine{justify-content:flex-end}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.bub{max-width:62%;padding:9px 13px;border-radius:14px;line-height:1.45;font-size:14.5px;white-space:pre-wrap;word-wrap:break-word;position:relative}
+.mine .bub{background:var(--me);border-bottom-right-radius:4px;color:#eef4fa}
+.them .bub{background:var(--them);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub.gone{background:transparent!important;border:1px dashed #3a414c!important;color:#6d7784;font-style:italic;font-size:13px}
+.meta{font-size:10.5px;color:var(--muted);margin:3px 4px 0;text-align:right}
+.seen{font-size:11px;color:var(--muted);text-align:right;margin:2px 4px 0}
+.sys{text-align:center;color:#6b7481;font-size:11.5px;margin:10px 0;font-style:italic}
+
+.typing{display:flex;align-items:center;gap:5px;padding:11px 14px;background:var(--them);border:1px solid var(--line);border-radius:14px;border-bottom-left-radius:4px;width:fit-content}
+.dot{width:6px;height:6px;border-radius:50%;background:#8b95a3;animation:bl 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bl{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+#compose{flex:0 0 auto;border-top:1px solid var(--line);padding:12px 18px;background:var(--panel2);display:flex;gap:10px;align-items:flex-end}
+#inp{flex:1;resize:none;background:#11151a;border:1px solid var(--line);border-radius:8px;color:var(--txt);
+  padding:11px 13px;font:inherit;font-size:14.5px;max-height:120px;outline:none;caret-color:var(--accent)}
+#inp:focus{border-color:#31536f}
+#send{background:var(--me);border:0;color:#fff;border-radius:8px;padding:11px 17px;font-size:14px;cursor:pointer}
+#send:disabled{opacity:.45}
+
+/* ---------- FX ---------- */
+#veil{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:60;transition:opacity .08s}
+#noise{position:fixed;inset:0;pointer-events:none;z-index:55;opacity:0;mix-blend-mode:screen;
+  background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 1px,transparent 1px 3px)}
+#scan{position:fixed;inset:0;pointer-events:none;z-index:54;opacity:0;
+  background:linear-gradient(rgba(255,0,60,.14),rgba(0,255,255,.1))}
+body.glitch #app{animation:gl .28s steps(2) 4}
+@keyframes gl{0%{transform:translate(0)}25%{transform:translate(-6px,2px);filter:hue-rotate(50deg)}
+50%{transform:translate(5px,-3px)}75%{transform:translate(-3px,-1px);filter:invert(.08)}100%{transform:none}}
+body.shake #app{animation:sh .5s}
+@keyframes sh{0%,100%{transform:none}20%{transform:translate(-9px,4px)}40%{transform:translate(8px,-5px)}60%{transform:translate(-5px,-2px)}80%{transform:translate(4px,3px)}}
+body.flicker #app{animation:fl 1.6s}
+@keyframes fl{0%,100%{opacity:1}5%{opacity:.1}8%{opacity:1}14%{opacity:.25}17%{opacity:1}42%{opacity:.05}45%{opacity:1}70%{opacity:.4}73%{opacity:1}}
+body.blood{--them:#2a1416;--line:#3a1c1f}
+
+/* ---------- PANEL ---------- */
+#panel{position:fixed;top:0;right:0;height:100%;width:430px;max-width:92vw;background:#0b0d10;border-left:1px solid var(--line);
+  z-index:80;transform:translateX(102%);transition:transform .22s;display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#panel.open{transform:none}
+#panel h3{margin:0;padding:14px 16px;border-bottom:1px solid var(--line);font-size:14px}
+.pbody{padding:14px 16px;overflow-y:auto;flex:1}
+.pbody label{display:block;font-size:11.5px;color:var(--muted);margin:12px 0 5px;text-transform:uppercase;letter-spacing:.5px}
+#script{width:100%;height:320px;background:#101317;border:1px solid var(--line);border-radius:6px;color:#c6ccd4;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.55;padding:10px;resize:vertical;outline:none}
+.pbody input[type=text],.pbody input[type=number]{width:100%;background:#101317;border:1px solid var(--line);border-radius:6px;color:var(--txt);padding:8px;font:inherit;font-size:13px}
+.rowf{display:flex;gap:10px}.rowf>*{flex:1}
+.chk{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--txt)}
+.pbtns{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+.pbtns button{flex:1;padding:10px;border:1px solid var(--line);background:#161a20;color:var(--txt);border-radius:6px;cursor:pointer;font-size:13px}
+.pbtns button.pri{background:var(--me);border-color:var(--me);color:#fff}
+.hint{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:10px;white-space:pre-wrap}
+#gear{position:fixed;right:14px;bottom:14px;z-index:70;width:38px;height:38px;border-radius:50%;background:#1b2028;
+  border:1px solid var(--line);color:#8d97a4;cursor:pointer;font-size:16px}
+body.filming #gear{opacity:0;pointer-events:none}
+#ghostdot{position:fixed;left:6px;top:6px;width:5px;height:5px;border-radius:50%;background:#3f9e5a;opacity:.35;z-index:90;display:none}
+body.ghost #ghostdot{display:block}
+
+@media(max-width:760px){#side{display:none}#feed{padding:16px}.bub{max-width:82%}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <div class="brand"><div class="logo">N</div><div><b>Nexus Work</b><small>Kênh nội bộ • v4.2.1</small></div></div>
+    <div class="search">Tìm kiếm tin nhắn…</div>
+    <div class="sect">Tin nhắn gần đây</div>
+    <div class="contact active"><div class="av on" id="sav">?</div><div style="min-width:0"><div class="nm" id="sname">—</div><div class="pv" id="spv">—</div></div></div>
+    <div class="contact"><div class="av">TH</div><div style="min-width:0"><div class="nm">Trần Thu Hà</div><div class="pv">File báo cáo em gửi rồi nhé</div></div><span class="badge">2</span></div>
+    <div class="contact"><div class="av">BV</div><div style="min-width:0"><div class="nm">Bảo vệ toà nhà</div><div class="pv">Toà nhà đóng cửa lúc 19:00</div></div></div>
+    <div class="contact"><div class="av">IT</div><div style="min-width:0"><div class="nm">IT Support</div><div class="pv">Đã đóng ticket #4417</div></div></div>
+    <div class="contact"><div class="av">#</div><div style="min-width:0"><div class="nm"># thong-bao-chung</div><div class="pv">Lịch trực đêm tháng này</div></div></div>
+    <div class="me-bar"><div class="av on" id="meav">T</div><div><div id="mename">Tôi</div><div style="color:var(--muted);font-size:11px">Đang hoạt động</div></div></div>
+  </aside>
+
+  <main id="main">
+    <header id="head">
+      <div class="av on" id="hav">?</div>
+      <div><div id="hname">—</div><div id="hstat">—</div></div>
+      <div id="clock">--:--</div>
+    </header>
+    <div id="feed"><div class="daysep" id="daysep">Hôm nay</div></div>
+    <div id="compose">
+      <textarea id="inp" rows="1" placeholder="Nhập tin nhắn…"></textarea>
+      <button id="send">Gửi</button>
+    </div>
+  </main>
+</div>
+
+<div id="veil"></div><div id="noise"></div><div id="scan"></div><div id="ghostdot"></div>
+<button id="gear" title="Cài đặt (Esc)">⚙</button>
+
+<aside id="panel">
+  <h3>Bảng điều khiển kịch bản</h3>
+  <div class="pbody">
+    <label>Kịch bản</label>
+    <textarea id="script" spellcheck="false"></textarea>
+    <div class="rowf">
+      <div><label>Tên tôi</label><input type="text" id="cfgMe" value="Tôi"></div>
+      <div><label>Đồng hồ bắt đầu</label><input type="text" id="cfgClock" value="23:47"></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="cfgGhost" checked> Gõ phím ma (gõ phím bất kỳ ra đúng chữ kịch bản)</label>
+    <label class="chk"><input type="checkbox" id="cfgSound"> Bật âm thanh nền rùng rợn</label>
+    <label class="chk"><input type="checkbox" id="cfgFilm"> Chế độ quay phim (ẩn nút cài đặt)</label>
+    <div class="hint">CÚ PHÁP
+&gt; câu tôi gửi
+&lt; [2s] câu họ trả lời   (2s = thời gian "đang nhập")
+!name Tên hiển thị
+!status Dòng trạng thái
+!typing 6s      – gõ lâu rồi im bặt
+!wait 2s        – dừng
+!seen           – hiện "Đã xem"
+!delete         – thu hồi tin nhắn vừa rồi
+!sys Nội dung   – dòng hệ thống giữa màn
+!fx glitch | shake | flicker | blackout | noise | blood | reset
+!clock 03:14
+# dòng ghi chú
+
+PHÍM TẮT
+Esc – mở/đóng bảng này
+Enter – gửi • Ctrl+R – quay lại từ đầu
+F11 – toàn màn hình (đẹp nhất khi quay)</div>
+  </div>
+  <div class="pbtns">
+    <button class="pri" id="btnApply">Áp dụng &amp; bắt đầu</button>
+    <button id="btnReset">Xoá màn hình</button>
+  </div>
+</aside>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const feed=$("#feed"),inp=$("#inp"),send=$("#send"),panel=$("#panel"),scriptBox=$("#script");
+
+/* ---------- KỊCH BẢN MẪU ---------- */
+const DEMO=`# Kịch bản mẫu - hãy sửa lại theo phim của bạn
+!name Lê Minh - Phòng Nhân sự
+!status Đang hoạt động
+!clock 23:47
+
+< [1.5s] Anh vẫn còn ở văn phòng à?
+> Vâng, em ở lại làm nốt báo cáo quý.
+< [2s] Tầng mấy?
+> Tầng 7 anh ạ.
+!wait 1s
+< [3.5s] Tầng 7 bị khoá từ 19h rồi.
+< [2s] Ai mở cửa cho em vào?
+!fx glitch
+> Anh đừng doạ em.
+!status đang nhập…
+< [4s] Tôi không phải Lê Minh.
+!fx flicker
+!name ?????
+!sys Người dùng này đã đổi tên hiển thị
+< [2.5s] Minh nghỉ việc từ tháng trước. Em không nhớ sao?
+> Vậy ai đang nhắn với em???
+!typing 7s
+!sys Lê Minh đã thu hồi một tin nhắn
+!wait 1.5s
+< [0.6s] Đừng quay lại nhìn.
+!fx shake
+< [2s] Muộn rồi.
+!fx blackout
+`;
+
+/* ---------- STATE ---------- */
+let items=[],ptr=0,busy=false,ghost=true,ghostIdx=0,clockMin=0,clockBase=[23,47],audioCtx=null,drone=null;
+
+function parse(txt){
+  const out=[];
+  txt.split(/\r?\n/).forEach(raw=>{
+    const l=raw.trim();
+    if(!l||l.startsWith("#"))return;
+    if(l.startsWith(">")){out.push({t:"me",text:l.slice(1).trim()});return;}
+    if(l.startsWith("<")){
+      let s=l.slice(1).trim(),d=1800;
+      const m=s.match(/^\[\s*([\d.]+)\s*s?\s*\]/i);
+      if(m){d=parseFloat(m[1])*1000;s=s.slice(m[0].length).trim();}
+      out.push({t:"them",text:s,delay:d});return;
+    }
+    if(l.startsWith("!")){
+      const sp=l.slice(1).indexOf(" ");
+      const cmd=(sp<0?l.slice(1):l.slice(1,sp+1)).toLowerCase();
+      const arg=sp<0?"":l.slice(sp+2).trim();
+      out.push({t:"cmd",cmd,arg});return;
+    }
+    out.push({t:"them",text:l,delay:1800});
+  });
+  return out;
+}
+
+/* ---------- RENDER ---------- */
+function stamp(){const h=(clockBase[0]+Math.floor((clockBase[1]+clockMin)/60))%24,m=(clockBase[1]+clockMin)%60;
+  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");}
+function tickClock(){$("#clock").textContent=stamp();}
+function bottom(){feed.scrollTop=feed.scrollHeight;}
+
+function addMsg(text,mine){
+  const row=document.createElement("div");
+  row.className="row "+(mine?"mine":"them");
+  const wrap=document.createElement("div");
+  const b=document.createElement("div");b.className="bub";b.textContent=text;
+  const mt=document.createElement("div");mt.className="meta";mt.textContent=stamp();
+  wrap.appendChild(b);wrap.appendChild(mt);row.appendChild(wrap);
+  feed.appendChild(row);bottom();
+  $("#spv").textContent=text.length>34?text.slice(0,34)+"…":text;
+  return row;
+}
+function addSys(t){const d=document.createElement("div");d.className="sys";d.textContent=t;feed.appendChild(d);bottom();}
+function showTyping(){
+  const row=document.createElement("div");row.className="row them";
+  row.innerHTML='<div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
+  feed.appendChild(row);bottom();
+  $("#hstat").textContent="đang nhập…";
+  return row;
+}
+function clearSeen(){document.querySelectorAll(".seen").forEach(e=>e.remove());}
+
+/* ---------- FX ---------- */
+function fx(k){
+  const b=document.body;
+  const one=(c,ms)=>{b.classList.remove(c);void b.offsetWidth;b.classList.add(c);setTimeout(()=>b.classList.remove(c),ms);};
+  if(k==="glitch"){one("glitch",1200);blip(90);}
+  else if(k==="shake"){one("shake",600);blip(60);}
+  else if(k==="flicker"){one("flicker",1700);}
+  else if(k==="blackout"){const v=$("#veil");v.style.opacity=1;blip(40);setTimeout(()=>v.style.opacity=0,1400);}
+  else if(k==="noise"){const n=$("#noise"),s=$("#scan");n.style.opacity=.55;s.style.opacity=.5;
+    setTimeout(()=>{n.style.opacity=0;s.style.opacity=0;},1100);}
+  else if(k==="blood"){b.classList.add("blood");}
+  else if(k==="reset"){b.classList.remove("blood");$("#veil").style.opacity=0;$("#noise").style.opacity=0;$("#scan").style.opacity=0;}
+}
+function ensureAudio(){
+  if(!$("#cfgSound").checked)return null;
+  try{
+    if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+      drone=audioCtx.createOscillator();const g=audioCtx.createGain();
+      drone.type="sine";drone.frequency.value=48;g.gain.value=.05;
+      drone.connect(g);g.connect(audioCtx.destination);drone.start();}
+    if(audioCtx.state==="suspended")audioCtx.resume();
+    return audioCtx;
+  }catch(e){return null;}
+}
+function blip(f){
+  const c=ensureAudio();if(!c)return;
+  try{const o=c.createOscillator(),g=c.createGain();o.type="square";o.frequency.value=f;
+    g.gain.setValueAtTime(.08,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.25);
+    o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.26);}catch(e){}
+}
+
+/* ---------- PLAYBACK ---------- */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function secs(a,def){const m=(a||"").match(/([\d.]+)/);return m?parseFloat(m[1])*1000:def;}
+
+async function runCmd(it){
+  const a=it.arg;
+  switch(it.cmd){
+    case "name": $("#hname").textContent=a;$("#sname").textContent=a;
+      {const ini=a.replace(/[^A-Za-zÀ-ỹ0-9? ]/g,"").trim().split(/\s+/).slice(0,2).map(w=>w[0]||"?").join("").toUpperCase()||"?";
+       $("#hav").textContent=ini;$("#sav").textContent=ini;} break;
+    case "status": $("#hstat").textContent=a; break;
+    case "sys": addSys(a); break;
+    case "seen": {clearSeen();const d=document.createElement("div");d.className="seen";d.textContent="Đã xem lúc "+stamp();feed.appendChild(d);bottom();} break;
+    case "wait": await sleep(secs(a,1000)); break;
+    case "clock": {const m=a.match(/(\d{1,2})\s*:\s*(\d{2})/);if(m){clockBase=[+m[1],+m[2]];clockMin=0;tickClock();}} break;
+    case "fx": fx((a||"").toLowerCase()); break;
+    case "typing": {const t=showTyping();await sleep(secs(a,5000));t.remove();$("#hstat").textContent="Đang hoạt động";} break;
+    case "delete": {
+      const rows=[...feed.querySelectorAll(".row")];
+      for(let i=rows.length-1;i>=0;i--){const b=rows[i].querySelector(".bub");
+        if(b&&!b.classList.contains("gone")){b.classList.add("gone");b.textContent="Tin nhắn đã bị thu hồi";break;}}
+      } break;
+  }
+}
+
+async function playFrom(){
+  busy=true;send.disabled=true;
+  while(ptr<items.length && items[ptr].t!=="me"){
+    const it=items[ptr++];
+    if(it.t==="cmd"){await runCmd(it);}
+    else{
+      const t=showTyping();
+      await sleep(Math.max(200,it.delay));
+      t.remove();
+      $("#hstat").textContent="Đang hoạt động";
+      addMsg(it.text,false);blip(150);
+      clockMin+=Math.random()<.5?0:1;tickClock();
+      await sleep(260);
+    }
+  }
+  busy=false;send.disabled=false;
+  prepGhost();
+  if(ptr>=items.length){$("#hstat").textContent="Ngoại tuyến";}
+}
+
+function nextMine(){for(let i=ptr;i<items.length;i++){if(items[i].t==="me")return items[i].text;}return "";}
+function prepGhost(){ghostIdx=0;inp.value="";inp.placeholder=nextMine()?"Nhập tin nhắn…":"— hết kịch bản —";}
+
+function doSend(){
+  if(busy)return;
+  while(ptr<items.length && items[ptr].t!=="me"){return playFrom();}
+  const it=items[ptr];
+  if(!it)return;
+  ptr++;
+  clearSeen();
+  addMsg(it.text,true);
+  inp.value="";ghostIdx=0;
+  clockMin+=Math.random()<.4?1:0;tickClock();
+  setTimeout(playFrom,420);
+}
+
+/* ---------- INPUT ---------- */
+inp.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();doSend();return;}
+  if(!ghost)return;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const target=nextMine();
+  if(e.key==="Backspace"){e.preventDefault();if(ghostIdx>0){ghostIdx--;inp.value=target.slice(0,ghostIdx);}return;}
+  if(e.key.length===1){
+    e.preventDefault();
+    if(ghostIdx<target.length){ghostIdx++;inp.value=target.slice(0,ghostIdx);}
+    inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,120)+"px";
+  }
+});
+inp.addEventListener("input",()=>{inp.style.height="auto";inp.style.height=Math.min(inp.scrollHeight,120)+"px";});
+send.addEventListener("click",doSend);
+
+/* ---------- PANEL ---------- */
+function openP(o){panel.classList.toggle("open",o);}
+$("#gear").onclick=()=>openP(!panel.classList.contains("open"));
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){e.preventDefault();openP(!panel.classList.contains("open"));}
+  if(e.ctrlKey&&e.key.toLowerCase()==="r"){e.preventDefault();apply();}
+});
+
+function apply(){
+  items=parse(scriptBox.value);ptr=0;clockMin=0;
+  feed.innerHTML='<div class="daysep">Hôm nay</div>';
+  document.body.classList.remove("blood");fx("reset");
+  $("#mename").textContent=$("#cfgMe").value||"Tôi";
+  $("#meav").textContent=($("#cfgMe").value||"T").trim()[0].toUpperCase();
+  const cm=($("#cfgClock").value||"23:47").match(/(\d{1,2})\s*:\s*(\d{2})/);
+  clockBase=cm?[+cm[1],+cm[2]]:[23,47];tickClock();
+  ghost=$("#cfgGhost").checked;document.body.classList.toggle("ghost",ghost);
+  document.body.classList.toggle("filming",$("#cfgFilm").checked);
+  ensureAudio();
+  save();openP(false);
+  playFrom().then(()=>inp.focus());
+  inp.focus();
+}
+$("#btnApply").onclick=apply;
+$("#btnReset").onclick=()=>{feed.innerHTML='<div class="daysep">Hôm nay</div>';ptr=0;prepGhost();};
+["cfgGhost","cfgSound","cfgFilm"].forEach(id=>$("#"+id).addEventListener("change",()=>{
+  ghost=$("#cfgGhost").checked;document.body.classList.toggle("ghost",ghost);
+  document.body.classList.toggle("filming",$("#cfgFilm").checked);ensureAudio();save();}));
+
+/* ---------- LƯU TRỮ ---------- */
+function save(){try{localStorage.setItem("hchat",JSON.stringify({s:scriptBox.value,me:$("#cfgMe").value,
+  c:$("#cfgClock").value,g:$("#cfgGhost").checked,so:$("#cfgSound").checked,f:$("#cfgFilm").checked}));}catch(e){}}
+function load(){
+  let d=null;try{const r=localStorage.getItem("hchat");if(r)d=JSON.parse(r);}catch(e){}
+  scriptBox.value=d&&d.s?d.s:DEMO;
+  if(d){$("#cfgMe").value=d.me||"Tôi";$("#cfgClock").value=d.c||"23:47";
+    $("#cfgGhost").checked=d.g!==false;$("#cfgSound").checked=!!d.so;$("#cfgFilm").checked=!!d.f;}
+}
+scriptBox.addEventListener("input",save);
+$("#cfgMe").addEventListener("input",save);$("#cfgClock").addEventListener("input",save);
+
+/* ---------- KHỞI ĐỘNG ---------- */
+load();
+items=parse(scriptBox.value);ptr=0;
+$("#mename").textContent=$("#cfgMe").value;
+const cm0=$("#cfgClock").value.match(/(\d{1,2})\s*:\s*(\d{2})/);if(cm0)clockBase=[+cm0[1],+cm0[2]];
+tickClock();setInterval(()=>{if(Math.random()<.5){clockMin++;tickClock();}},60000);
+ghost=$("#cfgGhost").checked;document.body.classList.toggle("ghost",ghost);
+document.body.classList.toggle("filming",$("#cfgFilm").checked);
+playFrom();
+inp.focus();
+document.addEventListener("click",()=>{ensureAudio();},{once:true});
+})();
+</script>
+</body>
+</html>
